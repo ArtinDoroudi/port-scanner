@@ -21,7 +21,7 @@ def scan_port(host: str, port: int, timeout: float = 1.0) -> dict:
     (likely a firewall silently dropping packets).
 
     Args:
-        host:    Target hostname or IP address.
+        host:    Target hostname or IP address (no http:// prefix).
         port:    Port number to scan (1–65535).
         timeout: Seconds to wait before giving up. Lower = faster but more
                  false 'filtered' results on slow networks.
@@ -46,7 +46,6 @@ def scan_port(host: str, port: int, timeout: float = 1.0) -> dict:
     except socket.timeout:
         result["state"] = "filtered"
     except socket.gaierror as e:
-        # Host resolution failed — bad hostname or no DNS
         result["state"] = "error"
         result["error"] = str(e)
     except OSError as e:
@@ -93,6 +92,28 @@ def parse_port_range(port_range: str) -> list[int]:
     return sorted(set(ports))
 
 
+def sanitize_host(host: str) -> str:
+    """
+    Strip URL scheme and path from a host string so sockets can resolve it.
+
+    Accepts messy input like 'http://scanme.nmap.org/' and returns
+    the clean hostname 'scanme.nmap.org' that socket can actually use.
+
+    Args:
+        host: Raw host string, possibly with http:// prefix or trailing slash.
+
+    Returns:
+        Clean hostname or IP string.
+    """
+    host = host.strip()
+    for prefix in ("https://", "http://"):
+        if host.startswith(prefix):
+            host = host[len(prefix):]
+    host = host.split("/")[0]  # strip any path
+    host = host.split(":")[0]  # strip any port if embedded in URL
+    return host
+
+
 def run_scan(
     host: str,
     ports: list[int],
@@ -114,13 +135,13 @@ def run_scan(
         threads:    Max concurrent threads (default 100).
         timeout:    Per-port connection timeout in seconds.
         rate_limit: Optional delay (seconds) between launching threads.
-                    Useful for staying under IDS thresholds.
         on_result:  Optional callback invoked with each result as it arrives.
-                    Useful for live progress output.
 
     Returns:
         List of result dicts, sorted by port number.
     """
+    host = sanitize_host(host)
+
     results = []
     results_lock = threading.Lock()
     semaphore = threading.Semaphore(threads)
@@ -135,7 +156,7 @@ def run_scan(
 
     thread_list = []
     for port in ports:
-        t = threading.Thread(target=worker, args=(port,), daemon=True)
+        t = threading.Thread(target=worker, args=(port,))  # no daemon=True
         thread_list.append(t)
         t.start()
         if rate_limit > 0:

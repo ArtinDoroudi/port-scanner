@@ -14,7 +14,7 @@ from colorama import Fore, Style, init as colorama_init
 from scanner.core import parse_port_range, run_scan
 from scanner.banner import enrich_result
 from scanner.reporter import build_report, write_report
-
+from scanner.core import sanitize_host
 
 colorama_init(autoreset=True)
 
@@ -146,7 +146,9 @@ def main() -> None:
         print(Fore.RED + f"[!] Invalid port specification: {e}")
         sys.exit(1)
 
-    print(Fore.CYAN + f"  Target  : {args.target}")
+
+    clean_host = sanitize_host(args.target)
+    print(Fore.CYAN + f"  Target  : {clean_host}")
     print(Fore.CYAN + f"  Ports   : {args.ports} ({len(ports)} ports)")
     print(Fore.CYAN + f"  Threads : {args.threads}")
     print(Fore.CYAN + f"  Timeout : {args.timeout}s")
@@ -155,7 +157,7 @@ def main() -> None:
     # Run the scan with live output callback
     start = time.monotonic()
     results = run_scan(
-        host=args.target,
+        host=clean_host,
         ports=ports,
         threads=args.threads,
         timeout=args.timeout,
@@ -186,7 +188,7 @@ def main() -> None:
 
     # Build and write the report
     report = build_report(
-        host=args.target,
+        host=clean_host,
         ports_scanned=len(ports),
         duration=duration,
         results=results,
