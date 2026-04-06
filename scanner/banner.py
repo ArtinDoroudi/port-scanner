@@ -3,8 +3,7 @@ banner.py — Banner grabbing and service fingerprinting.
 
 After confirming a port is open, we attempt to read whatever the service
 sends immediately on connection (its "banner"), then match it against known
-signatures to identify the service. This is how tools like Nmap guess what's
-running without being told.
+signatures to identify the service. 
 """
 
 import socket
