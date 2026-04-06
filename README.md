@@ -1,5 +1,5 @@
 # Port Scanner
-![Port Scanner Demo](demo.gif)
+![Port Scanner Demo](demo2.gif)
 ![Tests](https://github.com/ArtinDoroudi/port-scanner/actions/workflows/tests.yml/badge.svg)
 
 A multi-threaded TCP port scanner with banner grabbing and service fingerprinting,
