@@ -91,7 +91,7 @@ def output_text(report: dict, filepath: str | None = None) -> None:
         for r in open_ports:
             banner = r.get("banner") or ""
             # Truncate long banners so lines stay readable
-            banner_preview = banner[:40].replace("\n", " ") if banner else "-"
+            banner_preview = banner[:40].replace("\r", "").replace("\n", " ") if banner else "-"
             lines.append(
                 f"  {r['port']:<8} {r['state']:<10} "
                 f"{r.get('service', 'unknown'):<15} {banner_preview}"

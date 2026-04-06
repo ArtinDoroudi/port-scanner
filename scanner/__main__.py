@@ -123,11 +123,8 @@ def on_result_callback(result: dict, open_only: bool) -> None:
 
     if state == "open":
         print(Fore.GREEN + f"  [OPEN]     {port}")
-    elif not open_only:
-        if state == "filtered":
-            print(Fore.YELLOW + f"  [FILTERED] {port}")
-        else:
-            print(Fore.WHITE + Style.DIM + f"  [CLOSED]   {port}")
+    elif state == "filtered" and not open_only:
+        print(Fore.YELLOW + f"  [FILTERED] {port}")
 
 
 def main() -> None:
