@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How It Works — Port Scanner</title>
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --muted: #555;
+      --faint: #888;
+      --rule: #ccc;
+      --bg: #faf9f7;
+      --accent: #1a1a1a;
+      --open: #2a6e2a;
+      --closed: #8a2020;
+      --filtered: #5a4a10;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 18px;
+      line-height: 1.75;
+      padding: 0 1rem;
+    }
+
+    /* Layout */
+    .page {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 5rem 0 8rem;
+    }
+
+    /* Typography */
+    h1 {
+      font-size: 2.2rem;
+      font-weight: normal;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.3rem;
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      font-weight: normal;
+      font-style: italic;
+      color: var(--muted);
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    h3 {
+      font-size: 1rem;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin: 2rem 0 0.75rem;
+    }
+
+    p { margin-bottom: 1.2rem; }
+
+    a {
+      color: var(--ink);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    a:hover { color: var(--muted); }
+
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.82em;
+      background: #efefec;
+      padding: 0.1em 0.35em;
+      border-radius: 2px;
+    }
+
+    pre {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8em;
+      background: #efefec;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      line-height: 1.6;
+      border-left: 2px solid var(--rule);
+    }
+
+    /* Header meta */
+    .meta {
+      font-size: 0.85rem;
+      color: var(--faint);
+      font-style: italic;
+      margin-bottom: 2.5rem;
+    }
+
+    .meta a { color: var(--faint); }
+
+    /* Divider */
+    hr {
+      border: none;
+      border-top: 1px solid var(--rule);
+      margin: 3rem 0;
+    }
+
+    /* Pull quote */
+    blockquote {
+      border-left: 2px solid var(--ink);
+      margin: 2rem 0;
+      padding: 0.5rem 0 0.5rem 1.5rem;
+      font-style: italic;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    /* Diagrams */
+    .diagram {
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+
+    .diagram svg { display: block; }
+
+    .diagram-caption {
+      font-size: 0.8rem;
+      color: var(--faint);
+      font-style: italic;
+      text-align: center;
+      margin-top: 0.6rem;
+    }
+
+    /* Port state table */
+    .state-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1.5rem 0;
+    }
+
+    .state-table th {
+      text-align: left;
+      font-family: 'Courier New', monospace;
+      font-weight: normal;
+      color: var(--faint);
+      border-bottom: 1px solid var(--rule);
+      padding: 0.4rem 0.75rem 0.4rem 0;
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .state-table td {
+      padding: 0.55rem 0.75rem 0.55rem 0;
+      border-bottom: 1px solid #e8e8e4;
+      vertical-align: top;
+    }
+
+    .tag {
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem;
+      padding: 0.15em 0.5em;
+      border-radius: 2px;
+      font-weight: bold;
+    }
+
+    .tag-open     { background: #d4edda; color: var(--open); }
+    .tag-closed   { background: #f8d7da; color: var(--closed); }
+    .tag-filtered { background: #fff3cd; color: var(--filtered); }
+
+    /* OSI layer table */
+    .osi-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 1.5rem 0;
+    }
+
+    .osi-table tr { border-bottom: 1px solid #e8e8e4; }
+    .osi-table tr:last-child { border-bottom: none; }
+
+    .osi-table td {
+      padding: 0.5rem 0.5rem 0.5rem 0;
+      vertical-align: top;
+    }
+
+    .osi-layer {
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem;
+      color: var(--faint);
+      white-space: nowrap;
+      min-width: 80px;
+    }
+
+    .osi-name {
+      font-weight: bold;
+      min-width: 120px;
+    }
+
+    .osi-highlight { background: #f0ede4; }
+
+    /* Footer */
+    footer {
+      margin-top: 5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+      font-size: 0.82rem;
+      color: var(--faint);
+      font-style: italic;
+    }
+
+    footer a { color: var(--faint); }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      body { font-size: 16px; }
+      h1 { font-size: 1.7rem; }
+      pre { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <h1>How the Port Scanner Works</h1>
+  <p class="meta">
+    Technical Documentation &mdash;
+    <a href="https://github.com/ArtinDoroudi/port-scanner">github.com/ArtinDoroudi/port-scanner</a>
+  </p>
+
+  <p>
+    This document explains the concepts behind the port scanner: what a port is,
+    how TCP connections are established, what banner grabbing reveals, and how
+    threading changes the performance profile of network I/O. It is written for
+    anyone who wants to understand what the code is actually doing.
+  </p>
+
+  <blockquote>
+    Only scan hosts you own or have explicit written permission to scan.
+    Unauthorized port scanning may be illegal in your jurisdiction.
+  </blockquote>
+
+  <!-- ─── OSI MODEL ──────────────────────────────────────────────── -->
+  <h2>Where this lives in the OSI model</h2>
+
+  <p>
+    The OSI (Open Systems Interconnection) model is a seven-layer framework that
+    describes how data travels from one machine to another. Each layer has a
+    specific job, and they stack on top of each other. Port scanning operates at
+    layers 3 and 4 — it is concerned with <em>which host</em> and <em>which
+    service on that host</em>.
+  </p>
+
+  <table class="osi-table">
+    <tr><td class="osi-layer">Layer 7</td><td class="osi-name">Application</td><td>HTTP, SSH, FTP — what apps speak</td></tr>
+    <tr><td class="osi-layer">Layer 6</td><td class="osi-name">Presentation</td><td>Encoding, encryption (TLS)</td></tr>
+    <tr><td class="osi-layer">Layer 5</td><td class="osi-name">Session</td><td>Managing connection state</td></tr>
+    <tr class="osi-highlight"><td class="osi-layer">Layer 4</td><td class="osi-name">Transport ✦</td><td>TCP and UDP — ports live here</td></tr>
+    <tr class="osi-highlight"><td class="osi-layer">Layer 3</td><td class="osi-name">Network ✦</td><td>IP addresses, routing between hosts</td></tr>
+    <tr><td class="osi-layer">Layer 2</td><td class="osi-name">Data Link</td><td>MAC addresses, switches, frames</td></tr>
+    <tr><td class="osi-layer">Layer 1</td><td class="osi-name">Physical</td><td>Cables, radio, light pulses</td></tr>
+  </table>
+
+  <p>
+    The scanner uses Python's <code>socket</code> library, which sits at the boundary
+    of layers 3 and 4. It asks the OS to attempt a TCP connection to a given IP
+    address and port number. The OS handles everything below — routing, ARP,
+    physical transmission. The scanner only cares about whether the connection
+    succeeded or not.
+  </p>
+
+  <!-- ─── TCP HANDSHAKE ─────────────────────────────────────────── -->
+  <h2>The TCP three-way handshake</h2>
+
+  <p>
+    TCP (Transmission Control Protocol, defined in <a href="https://www.rfc-editor.org/rfc/rfc793" target="_blank">RFC 793</a>)
+    is a connection-oriented protocol. Before any data flows, both sides must agree
+    to talk. This agreement is called the three-way handshake.
+  </p>
+
+  <!-- HANDSHAKE DIAGRAM -->
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 680 280" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- Column headers -->
+      <text x="140" y="28" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" fill="#888">SCANNER</text>
+      <text x="540" y="28" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" fill="#888">TARGET HOST</text>
+
+      <!-- Vertical timeline lines -->
+      <line x1="140" y1="40" x2="140" y2="265" stroke="#ccc" stroke-width="1" stroke-dasharray="4 3"/>
+      <line x1="540" y1="40" x2="540" y2="265" stroke="#ccc" stroke-width="1" stroke-dasharray="4 3"/>
+
+      <!-- Step 1: SYN -->
+      <line x1="145" y1="80" x2="533" y2="110" stroke="#1a1a1a" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="340" y="78" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="13" fill="#1a1a1a">SYN</text>
+      <text x="340" y="120" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#888">seq=x</text>
+
+      <!-- Step 2: SYN-ACK -->
+      <line x1="535" y1="140" x2="148" y2="170" stroke="#1a1a1a" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="340" y="138" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="13" fill="#1a1a1a">SYN-ACK</text>
+      <text x="340" y="180" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#888">seq=y, ack=x+1</text>
+
+      <!-- Step 3: ACK -->
+      <line x1="145" y1="200" x2="533" y2="230" stroke="#1a1a1a" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="340" y="198" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="13" fill="#1a1a1a">ACK</text>
+      <text x="340" y="240" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#888">ack=y+1</text>
+
+      <!-- Connection established label -->
+      <text x="340" y="265" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="12" fill="#555">connection established</text>
+
+      <!-- Step labels -->
+      <text x="30" y="98" font-family="'Courier New',monospace" font-size="10" fill="#aaa">1.</text>
+      <text x="30" y="158" font-family="'Courier New',monospace" font-size="10" fill="#aaa">2.</text>
+      <text x="30" y="218" font-family="'Courier New',monospace" font-size="10" fill="#aaa">3.</text>
+    </svg>
+    <p class="diagram-caption">The TCP three-way handshake. A port is "open" if the target replies with SYN-ACK.</p>
+  </div>
+
+  <p>
+    When the scanner calls <code>sock.connect_ex((host, port))</code>, the OS sends
+    a SYN packet. If the target port has a service listening, it replies with SYN-ACK.
+    The OS completes the handshake by sending ACK, and <code>connect_ex</code>
+    returns <code>0</code> — meaning open. The entire handshake is invisible to
+    the Python code; the socket library handles it.
+  </p>
+
+  <!-- ─── PORT STATES ───────────────────────────────────────────── -->
+  <h2>The three port states</h2>
+
+  <p>
+    A port can respond in three distinct ways, and each tells us something different
+    about the target.
+  </p>
+
+  <table class="state-table">
+    <tr>
+      <th>State</th>
+      <th>What happens on the wire</th>
+      <th>What it means</th>
+    </tr>
+    <tr>
+      <td><span class="tag tag-open">OPEN</span></td>
+      <td>Target replies SYN-ACK. <code>connect_ex</code> returns 0.</td>
+      <td>A service is actively listening on this port.</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-closed">CLOSED</span></td>
+      <td>Target replies RST (reset). Connection refused immediately.</td>
+      <td>Nothing is listening, but the host is reachable.</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-filtered">FILTERED</span></td>
+      <td>No reply. The socket times out after <em>N</em> seconds.</td>
+      <td>A firewall is silently dropping packets — we cannot tell if anything is listening.</td>
+    </tr>
+  </table>
+
+  <p>
+    The difference between closed and filtered is significant. A closed port
+    <em>actively refuses</em> — the host is there, it just has nothing on that port.
+    A filtered port gives no signal at all. This silence is the firewall speaking:
+    it drops the packet without sending any reply, which is why filtered ports take
+    much longer to scan (we have to wait for the full timeout).
+  </p>
+
+  <!-- ─── SYN VS CONNECT ────────────────────────────────────────── -->
+  <h2>TCP connect scan vs. SYN scan</h2>
+
+  <p>
+    There are two main approaches to port scanning. This scanner uses a
+    <strong>TCP connect scan</strong>. Here is how they compare.
+  </p>
+
+  <!-- SYN vs CONNECT DIAGRAM -->
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- CONNECT SCAN (left) -->
+      <text x="160" y="25" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" fill="#555">TCP CONNECT SCAN</text>
+      <text x="60" y="55" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#888">us</text>
+      <text x="260" y="55" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#888">target</text>
+      <line x1="60" y1="62" x2="60" y2="240" stroke="#ccc" stroke-width="1" stroke-dasharray="3 3"/>
+      <line x1="260" y1="62" x2="260" y2="240" stroke="#ccc" stroke-width="1" stroke-dasharray="3 3"/>
+
+      <line x1="64" y1="90" x2="253" y2="110" stroke="#1a1a1a" stroke-width="1.2" marker-end="url(#arr2)"/>
+      <text x="160" y="87" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="12" fill="#1a1a1a">SYN</text>
+
+      <line x1="256" y1="130" x2="67" y2="150" stroke="#1a1a1a" stroke-width="1.2" marker-end="url(#arr2)"/>
+      <text x="160" y="128" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="12" fill="#1a1a1a">SYN-ACK</text>
+
+      <line x1="64" y1="170" x2="253" y2="190" stroke="#1a1a1a" stroke-width="1.2" marker-end="url(#arr2)"/>
+      <text x="160" y="168" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="12" fill="#1a1a1a">ACK</text>
+
+      <line x1="64" y1="210" x2="253" y2="225" stroke="#888" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arr2)"/>
+      <text x="160" y="208" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="11" fill="#888">FIN</text>
+
+      <text x="160" y="248" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#aaa">full handshake — logged by target</text>
+
+      <!-- Divider -->
+      <line x1="340" y1="30" x2="340" y2="245" stroke="#e0e0da" stroke-width="1"/>
+
+      <!-- SYN SCAN (right) -->
+      <text x="510" y="25" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" fill="#555">SYN (HALF-OPEN) SCAN</text>
+      <text x="400" y="55" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#888">us</text>
+      <text x="620" y="55" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#888">target</text>
+      <line x1="400" y1="62" x2="400" y2="240" stroke="#ccc" stroke-width="1" stroke-dasharray="3 3"/>
+      <line x1="620" y1="62" x2="620" y2="240" stroke="#ccc" stroke-width="1" stroke-dasharray="3 3"/>
+
+      <line x1="404" y1="100" x2="613" y2="120" stroke="#1a1a1a" stroke-width="1.2" marker-end="url(#arr2)"/>
+      <text x="510" y="97" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="12" fill="#1a1a1a">SYN</text>
+
+      <line x1="616" y1="140" x2="407" y2="160" stroke="#1a1a1a" stroke-width="1.2" marker-end="url(#arr2)"/>
+      <text x="510" y="138" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="12" fill="#1a1a1a">SYN-ACK</text>
+
+      <line x1="404" y1="180" x2="613" y2="195" stroke="#c0392b" stroke-width="1.2" marker-end="url(#arr2)"/>
+      <text x="510" y="178" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="12" fill="#c0392b">RST</text>
+
+      <text x="510" y="225" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#aaa">connection never completed</text>
+      <text x="510" y="238" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#aaa">often not logged — requires root</text>
+    </svg>
+    <p class="diagram-caption">Left: TCP connect scan completes the handshake. Right: SYN scan tears down early with RST, avoiding the log entry.</p>
+  </div>
+
+  <p>
+    A <strong>TCP connect scan</strong> completes the full three-way handshake.
+    The target's service logs see a real connection. This scanner uses connect
+    scans because they require no special privileges — any user can open a socket.
+  </p>
+
+  <p>
+    A <strong>SYN scan</strong> (also called a half-open scan) sends a SYN,
+    receives the SYN-ACK, and then immediately sends a RST to tear down the
+    connection before it completes. Because the handshake never finishes, many
+    applications and older firewalls do not log it. The tradeoff: crafting raw
+    packets requires root/administrator privileges and a raw socket, which Python's
+    <code>socket</code> library cannot do without elevation.
+  </p>
+
+  <!-- ─── BANNER GRABBING ───────────────────────────────────────── -->
+  <h2>Banner grabbing and service fingerprinting</h2>
+
+  <p>
+    Once we know a port is open, we want to know <em>what</em> is listening.
+    Many services announce themselves immediately after a connection is established —
+    this announcement is called a <em>banner</em>.
+  </p>
+
+  <!-- BANNER DIAGRAM -->
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- Scanner box -->
+      <rect x="40" y="70" width="120" height="50" rx="4" fill="none" stroke="#ccc" stroke-width="1"/>
+      <text x="100" y="91" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" fill="#888">scanner</text>
+      <text x="100" y="107" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#aaa">port 22</text>
+
+      <!-- Service box (SSH) -->
+      <rect x="280" y="40" width="160" height="50" rx="4" fill="#f0ede4" stroke="#ccc" stroke-width="1"/>
+      <text x="360" y="62" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" fill="#555">SSH service</text>
+      <text x="360" y="78" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#888">port 22, listening</text>
+
+      <!-- Service box (HTTP) -->
+      <rect x="280" y="120" width="160" height="50" rx="4" fill="#f0ede4" stroke="#ccc" stroke-width="1"/>
+      <text x="360" y="142" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" fill="#555">HTTP service</text>
+      <text x="360" y="158" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#888">port 80, silent</text>
+
+      <!-- Arrow to SSH: probe (connect) -->
+      <line x1="162" y1="88" x2="277" y2="68" stroke="#1a1a1a" stroke-width="1" marker-end="url(#arr3)"/>
+      <text x="215" y="73" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="11" fill="#555">connect</text>
+
+      <!-- Arrow back: banner -->
+      <line x1="278" y1="80" x2="163" y2="98" stroke="#1a1a1a" stroke-width="1.5" marker-end="url(#arr3)"/>
+      <text x="215" y="100" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#1a1a1a">SSH-2.0-OpenSSH_8.9</text>
+
+      <!-- Arrow to HTTP: probe -->
+      <line x1="162" y1="108" x2="277" y2="140" stroke="#1a1a1a" stroke-width="1" marker-end="url(#arr3)"/>
+
+      <!-- Arrow: HTTP probe sent -->
+      <line x1="163" y1="155" x2="277" y2="148" stroke="#888" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr3)"/>
+      <text x="215" y="168" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="11" fill="#888">HEAD / HTTP/1.0</text>
+
+      <!-- Arrow back: HTTP/1.1 200 -->
+      <line x1="278" y1="158" x2="163" y2="163" stroke="#1a1a1a" stroke-width="1.5" marker-end="url(#arr3)"/>
+      <text x="215" y="185" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#1a1a1a">HTTP/1.1 200 OK</text>
+    </svg>
+    <p class="diagram-caption">SSH announces itself immediately. HTTP requires a probe request before responding.</p>
+  </div>
+
+  <p>
+    Services like SSH, FTP, and SMTP send a greeting as soon as a connection is
+    established. SSH will immediately say <code>SSH-2.0-OpenSSH_8.9</code> — which
+    tells us the protocol version and server software in one line.
+  </p>
+
+  <p>
+    HTTP is a request-response protocol: it waits for a request before responding.
+    The scanner sends a minimal <code>HEAD / HTTP/1.0</code> probe to elicit a
+    response. The reply — <code>HTTP/1.1 200 OK</code> along with server headers —
+    reveals the web server and sometimes its version.
+  </p>
+
+  <p>
+    Service identification works in two stages. First, we scan the banner for known
+    signature strings. If the banner contains <code>SSH</code>, the service is SSH.
+    If no signature matches, we fall back to the IANA port number registry — port
+    3306 is almost certainly MySQL, port 5432 is almost certainly PostgreSQL. This
+    is not foolproof (any service can listen on any port) but it is accurate for
+    standard deployments.
+  </p>
+
+  <!-- ─── THREADING ─────────────────────────────────────────────── -->
+  <h2>Threading and why it matters for network I/O</h2>
+
+  <p>
+    Scanning 1,024 ports sequentially — one at a time — would take minutes.
+    Most of that time is spent <em>waiting</em>: waiting for the network packet to
+    travel, waiting for the target to reply, waiting for a timeout to expire.
+    The CPU is idle for nearly all of this.
+  </p>
+
+  <!-- THREADING DIAGRAM -->
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg">
+      <!-- Sequential label -->
+      <text x="40" y="28" font-family="'Courier New',monospace" font-size="11" fill="#555">Sequential (1 thread)</text>
+
+      <!-- Sequential: ports one after another -->
+      <rect x="40" y="40" width="80" height="22" rx="2" fill="#e8e4dc" stroke="#ccc" stroke-width="0.5"/>
+      <text x="80" y="55" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#555">port 22</text>
+
+      <rect x="125" y="40" width="80" height="22" rx="2" fill="#e8e4dc" stroke="#ccc" stroke-width="0.5"/>
+      <text x="165" y="55" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#555">port 23</text>
+
+      <rect x="210" y="40" width="80" height="22" rx="2" fill="#e8e4dc" stroke="#ccc" stroke-width="0.5"/>
+      <text x="250" y="55" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#555">port 80</text>
+
+      <rect x="295" y="40" width="80" height="22" rx="2" fill="#e8e4dc" stroke="#ccc" stroke-width="0.5"/>
+      <text x="335" y="55" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#555">port 443</text>
+
+      <text x="390" y="55" font-family="'Times New Roman',serif" font-style="italic" font-size="13" fill="#aaa">...and so on</text>
+
+      <text x="40" y="80" font-family="'Courier New',monospace" font-size="9" fill="#aaa">time &rarr;</text>
+      <text x="600" y="55" text-anchor="end" font-family="'Courier New',monospace" font-size="9" fill="#888">~17 min</text>
+
+      <!-- Divider -->
+      <line x1="40" y1="100" x2="640" y2="100" stroke="#e8e8e4" stroke-width="1"/>
+
+      <!-- Threaded label -->
+      <text x="40" y="125" font-family="'Courier New',monospace" font-size="11" fill="#555">Multi-threaded (100 threads)</text>
+
+      <!-- Thread rows, running in parallel -->
+      <rect x="40" y="138" width="78" height="14" rx="2" fill="#1a1a1a" stroke="none"/>
+      <text x="79" y="148" text-anchor="middle" font-family="'Courier New',monospace" font-size="8" fill="#faf9f7">port 22</text>
+
+      <rect x="40" y="156" width="78" height="14" rx="2" fill="#1a1a1a" stroke="none"/>
+      <text x="79" y="166" text-anchor="middle" font-family="'Courier New',monospace" font-size="8" fill="#faf9f7">port 23</text>
+
+      <rect x="40" y="174" width="78" height="14" rx="2" fill="#1a1a1a" stroke="none"/>
+      <text x="79" y="184" text-anchor="middle" font-family="'Courier New',monospace" font-size="8" fill="#faf9f7">port 80</text>
+
+      <rect x="40" y="192" width="78" height="14" rx="2" fill="#1a1a1a" stroke="none"/>
+      <text x="79" y="202" text-anchor="middle" font-family="'Courier New',monospace" font-size="8" fill="#faf9f7">port 443</text>
+
+      <text x="42" y="216" font-family="'Times New Roman',serif" font-style="italic" font-size="11" fill="#aaa">100 ports at once — all waiting in parallel</text>
+
+      <text x="600" y="174" text-anchor="end" font-family="'Courier New',monospace" font-size="9" fill="#888">~2 sec</text>
+
+      <!-- Speedup brace -->
+      <line x1="610" y1="51" x2="610" y2="178" stroke="#ccc" stroke-width="1"/>
+      <text x="625" y="118" text-anchor="middle" font-family="'Times New Roman',serif" font-style="italic" font-size="12" fill="#888" transform="rotate(90 625 118)">~500× faster</text>
+    </svg>
+    <p class="diagram-caption">Threads let us wait for many ports simultaneously. The bottleneck is network latency, not CPU.</p>
+  </div>
+
+  <p>
+    Threading works here because port scanning is <em>I/O-bound</em>, not
+    <em>CPU-bound</em>. Python's Global Interpreter Lock (GIL) prevents true
+    parallel CPU execution — but it releases the GIL during blocking I/O calls
+    like <code>connect_ex</code>. This means 100 threads can each be waiting for
+    a network response at the same time, even in Python.
+  </p>
+
+  <p>
+    The scanner controls concurrency with a <code>threading.Semaphore</code>.
+    This ensures no more than <em>N</em> threads are active simultaneously,
+    preventing the OS from running out of file descriptors (each open socket
+    consumes one) and preventing the target from seeing an unrealistic connection
+    storm.
+  </p>
+
+  <!-- ─── RATE LIMITING ─────────────────────────────────────────── -->
+  <h2>Rate limiting and IDS evasion</h2>
+
+  <p>
+    Intrusion Detection Systems (IDS) look for port scan signatures: a single source
+    IP attempting many connections in a short window. A rate limit — a small delay
+    between launching each thread — stretches the scan over a longer time window,
+    reducing the per-second connection rate and making the scan look less anomalous.
+  </p>
+
+  <pre>python -m scanner --target 192.168.1.1 --ports 1-65535 \
+  --threads 50 --rate-limit 0.05</pre>
+
+  <p>
+    This sends no more than 20 connection attempts per second instead of thousands.
+    It is not invisibility — a determined analyst reviewing logs will still see the
+    pattern — but it avoids triggering automated threshold alerts.
+  </p>
+
+  <!-- ─── ARCHITECTURE ───────────────────────────────────────────── -->
+  <h2>Code architecture</h2>
+
+  <p>
+    The scanner is structured as a Python package with four modules, each
+    with a single responsibility.
+  </p>
+
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- __main__.py (CLI) at top -->
+      <rect x="240" y="30" width="200" height="52" rx="4" fill="#1a1a1a" stroke="none"/>
+      <text x="340" y="53" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" fill="#faf9f7">__main__.py</text>
+      <text x="340" y="70" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#aaa">CLI / argparse / output</text>
+
+      <!-- core.py -->
+      <rect x="60" y="150" width="160" height="52" rx="4" fill="#f0ede4" stroke="#ccc" stroke-width="1"/>
+      <text x="140" y="173" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" fill="#555">core.py</text>
+      <text x="140" y="190" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#888">TCP scan / threading</text>
+
+      <!-- banner.py -->
+      <rect x="260" y="150" width="160" height="52" rx="4" fill="#f0ede4" stroke="#ccc" stroke-width="1"/>
+      <text x="340" y="173" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" fill="#555">banner.py</text>
+      <text x="340" y="190" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#888">banner grabbing</text>
+
+      <!-- reporter.py -->
+      <rect x="460" y="150" width="160" height="52" rx="4" fill="#f0ede4" stroke="#ccc" stroke-width="1"/>
+      <text x="540" y="173" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" fill="#555">reporter.py</text>
+      <text x="540" y="190" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#888">JSON / text output</text>
+
+      <!-- Arrows from __main__ to each module -->
+      <line x1="300" y1="82" x2="185" y2="148" stroke="#888" stroke-width="1" marker-end="url(#arr4)"/>
+      <line x1="340" y1="82" x2="340" y2="148" stroke="#888" stroke-width="1" marker-end="url(#arr4)"/>
+      <line x1="380" y1="82" x2="500" y2="148" stroke="#888" stroke-width="1" marker-end="url(#arr4)"/>
+
+      <!-- socket stdlib -->
+      <rect x="60" y="235" width="160" height="20" rx="2" fill="none" stroke="#ccc" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="140" y="249" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#aaa">socket (stdlib)</text>
+
+      <line x1="140" y1="202" x2="140" y2="233" stroke="#ccc" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr4)"/>
+    </svg>
+    <p class="diagram-caption">Dependency flow. The CLI orchestrates the three modules; only core.py touches the network directly.</p>
+  </div>
+
+  <p>
+    This separation means each module can be imported and tested independently.
+    <code>core.py</code> has no knowledge of output formats.
+    <code>reporter.py</code> has no knowledge of sockets. <code>banner.py</code>
+    only receives result dicts — it does not care how the scan was run.
+  </p>
+
+  <!-- ─── LIMITATIONS ───────────────────────────────────────────── -->
+  <h2>Limitations and future improvements</h2>
+
+  <h3>Current limitations</h3>
+  <p>
+    This scanner performs TCP connect scans only. UDP scanning requires a different
+    approach — UDP is connectionless, so there is no handshake to complete. A closed
+    UDP port typically replies with an ICMP "port unreachable" message, but filtered
+    ports produce no reply, making UDP results inherently ambiguous.
+  </p>
+
+  <p>
+    IPv6 is not explicitly supported. The socket code would need <code>AF_INET6</code>
+    and the CLI would need validation for IPv6 address formats.
+  </p>
+
+  <p>
+    The banner grabbing is shallow — it reads the first 1024 bytes and pattern-matches
+    against a small signature list. Full service version detection (like Nmap's
+    <code>-sV</code>) uses a much larger probe database and can identify thousands
+    of service versions.
+  </p>
+
+  <h3>Possible extensions</h3>
+  <p>
+    UDP scan support, OS fingerprinting via TCP/IP stack analysis, HTML report output,
+    CIDR range scanning (e.g. <code>192.168.1.0/24</code>), async I/O with
+    <code>asyncio</code> instead of threads, and a progress bar using
+    <code>tqdm</code>.
+  </p>
+
+  <!-- ─── REFERENCES ────────────────────────────────────────────── -->
+  <h2>References</h2>
+
+  <p>
+    <a href="https://www.rfc-editor.org/rfc/rfc793" target="_blank">RFC 793 — Transmission Control Protocol</a>.
+    The original 1981 TCP specification. Section 3.4 describes the connection
+    establishment procedure.
+  </p>
+
+  <p>
+    <a href="https://nmap.org/book/man.html" target="_blank">Nmap Reference Guide</a>.
+    Nmap is the gold standard in port scanning. Its documentation explains scan
+    types, timing, and service detection in depth.
+  </p>
+
+  <p>
+    <a href="https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml" target="_blank">
+    IANA Service Name and Port Number Registry</a>.
+    The authoritative list of port number assignments.
+  </p>
+
+  <p>
+    <a href="https://docs.python.org/3/library/socket.html" target="_blank">
+    Python <code>socket</code> module documentation</a>.
+    The stdlib module wrapping BSD sockets.
+  </p>
+
+  <footer>
+    <p>
+      Built by Artin Doroudi&mdash;
+      <a href="https://github.com/ArtinDoroudi/port-scanner">github.com/ArtinDoroudi/port-scanner</a>
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>
