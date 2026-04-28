@@ -2,7 +2,7 @@
 ![Port Scanner Demo](demo2.gif)
 ![Tests](https://github.com/ArtinDoroudi/port-scanner/actions/workflows/tests.yml/badge.svg)
 
-A multi-threaded TCP port scanner with banner grabbing and service fingerprinting,
+A fast, multi-threaded TCP port scanner with banner grabbing and service fingerprinting,
 built in Python using only the standard library.
 
 I built this to develop a concrete understanding of how services expose themselves
