@@ -3,7 +3,7 @@
 ![Tests](https://github.com/ArtinDoroudi/port-scanner/actions/workflows/tests.yml/badge.svg)
 
 A fast, multi-threaded TCP port scanner with banner grabbing and service fingerprinting,
-built in Python using only the standard library.
+built in Python using only the standard library (no external dependencies).
 
 I built this to develop a concrete understanding of how services expose themselves
 on a network — what a TCP handshake looks like at the socket level, how tools like
